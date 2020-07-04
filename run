@@ -1,0 +1,122 @@
+#!/bin/bash
+scylla='myscylla'
+
+case "$1" in
+#--------------------------------------------------------------------------------------------#
+ip)
+	docker exec -it ${scylla} /bin/hostname -I 
+;;
+#--------------------------------------------------------------------------------------------#
+compose)
+    docker-compose up -d 
+;;    
+#--------------------------------------------------------------------------------------------#
+pull)
+    docker pull scylladb/scylla
+;;    
+#--------------------------------------------------------------------------------------------#
+scylla)
+
+    docker run --name ${scylla} -d scylladb/scylla --smp 8 --memory 32G
+    # --volume /root/docker-general/scylladb/scylla.yaml:/etc/scylla/scylla.yaml
+;;
+#--------------------------------------------------------------------------------------------#
+bash)
+    docker exec -it ${scylla} bash 
+;;
+#--------------------------------------------------------------------------------------------#
+cqlsh)
+    docker exec -it ${scylla} cqlsh  
+;;
+#--------------------------------------------------------------------------------------------#
+status)
+    docker exec -it ${scylla} nodetool status
+;;
+#--------------------------------------------------------------------------------------------#
+keyspaces)
+    docker exec -it ${scylla} cqlsh -e 'describe keyspaces' 
+;;
+#--------------------------------------------------------------------------------------------#
+system)
+    docker exec -it ${scylla} cqlsh -e 'describe keyspace system' 
+;;
+#--------------------------------------------------------------------------------------------#
+sstart)
+    docker exec -it ${scylla} supervisorctl start scylla 
+;;
+#--------------------------------------------------------------------------------------------#
+sstop)
+    docker exec -it ${scylla} supervisorctl stop scylla 
+;;
+#--------------------------------------------------------------------------------------------#
+restart)
+    docker exec -it ${scylla} supervisorctl restart scylla 
+;;
+#--------------------------------------------------------------------------------------------#
+logs)
+    docker logs ${scylla} | tail -f
+;;
+#--------------------------------------------------------------------------------------------#
+start)
+    if [ -z "$2" ]; then
+        echo "Container Argument Missing"
+        docker ps -a 
+    elif [ "$1" == "ps" ] 2>/dev/null; then
+        docker container start ${2}
+    fi
+;;    
+#--------------------------------------------------------------------------------------------#
+stop)
+    docker stop $(docker ps -a -q) # stops all running containers    
+;;
+#----------------------------------------------------------------------------------------------------#
+# Stop all containers, delete all containers, images and volumes
+#----------------------------------------------------------------------------------------------------#
+delall)
+
+    echo "1/4 Stopping all containers"
+    docker stop $(docker ps -a -q)
+
+    echo "2/4 Removing all containers"
+    docker rm -f $(docker ps -a -q)
+
+    echo "3/4 Removing all images"
+    docker rmi -f $(docker images -q)
+
+    echo "4/4 Deleting All Volumes"
+    docker system prune --volumes
+;;
+
+#--------------------------------------------------------------------------------------------#
+*)
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run           -- Help                                                           |"
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run compose   -- docker-compose up -d                                           |"
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run pull      -- docker pull scylladb/scylla                                    |"
+    echo "|  ./run scylla    -- docker run --name ${scylla} -d scylladb/scylla                 |"
+    echo "|  ./run bash      -- docker exec -it ${scylla} bash                                 |"
+    echo "|  ./run ip        -- docker exec -it <image name> /bin/hostname -I                  |" 
+    echo "|  ./run cqlsh     -- docker exec -it ${scylla} cqlsh                                |"
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run status    -- docker exec -it ${scylla} nodetool status                      |"
+    echo "|  ./run keyspaces -- docker exec -it ${scylla} cqlsh -e 'describe keyspaces'        |"
+    echo "|  ./run system    -- docker exec -it ${scylla} cqlsh -e 'describe keyspace system'  |"
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run sstart    -- docker exec -it ${scylla} supervisorctl start scylla           |"
+    echo "|  ./run sstop     -- docker exec -it ${scylla} supervisorctl stop scylla            |"
+    echo "|  ./run restart   -- docker exec -it ${scylla} supervisorctl restart scylla         |"
+    echo "|  ./run logs      -- docker logs ${scylla} | tail -f                                |"
+    echo "+------------------------------------------------------------------------------------+"
+    echo "|  ./run start     -- docker container start <50e609c7d37c>                          |"
+    echo "|  ./run stop      -- docker stop all                                                |"
+    echo "|  ./run delall    -- docker delete all containers and images                        |"
+    echo "+------------------------------------------------------------------------------------+"
+
+;;
+
+esac
+exit 0
+
+
